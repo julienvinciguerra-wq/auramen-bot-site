@@ -616,7 +616,7 @@ details p { margin-top: 12px; color: var(--ink-dim); font-size: 14.5px; }
   }
   .rail__note { display: none; }
   .rail__toggle { display: inline-flex; margin-left: auto; order: 3; }
-  .rail__cta { margin: 0; order: 2; }
+  .rail__cta { margin: 0; order: 2; flex: 0 0 auto; white-space: nowrap; }
   .rail__nav {
     display: none;
     order: 4;
@@ -647,6 +647,9 @@ details p { margin-top: 12px; color: var(--ink-dim); font-size: 14.5px; }
   .perms li { flex-direction: column; gap: 4px; }
   .plan__head { flex-direction: column; align-items: flex-start; }
   .rail__cta { padding: 9px 14px; font-size: 13px; }
+}
+@media (max-width: 470px) {
+  .rail__cta { display: none; }
 }
 
 /* ==========================================================================
