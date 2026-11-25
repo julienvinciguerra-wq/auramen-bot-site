@@ -626,7 +626,7 @@ details p { margin-top: 12px; color: var(--ink-dim); font-size: 14.5px; }
     right: 0;
     padding: 12px;
     border-radius: 22px;
-    background: linear-gradient(145deg, rgba(30, 26, 40, 0.985), rgba(16, 14, 23, 0.975));
+    background: #15121d;
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
     backdrop-filter: blur(26px) saturate(180%);
