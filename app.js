@@ -81,16 +81,17 @@ const FEATURES = {
         { key: 'counterFormat', label: 'Formato (facoltativo)' }
       ]
     ],
-    build(values, state) {
+    build(values) {
       const labels = { membri: 'Membri: {count}', online: 'Online: {count}', bot: 'Bot: {count}' };
       const type = values.counterType || 'membri';
-      const picks = [
-        { label: 'tipo', value: type },
-        { label: 'canale', value: asChannel(values.counterChannel) }
-      ];
-      const format = values.counterFormat || labels[type];
-      picks.push({ label: 'formato', value: format });
-      return [{ command: `/counter setup tipo:${type}`, picks }];
+      return [{
+        command: `/counter setup tipo:${type}`,
+        picks: [
+          { label: 'tipo', value: type },
+          { label: 'canale', value: asChannel(values.counterChannel) },
+          { label: 'formato', value: values.counterFormat || labels[type] }
+        ]
+      }];
     }
   },
 
@@ -132,16 +133,14 @@ const FEATURES = {
     ],
     build(values) {
       const command = values.permCommand || 'warn';
-      return [
-        {
-          command: `/setup permessi comando:${command}`,
-          picks: [
-            { label: 'ruolo', value: asRole(values.permRole) },
-            { label: 'canale', value: asChannel(values.permChannel) }
-          ],
-          note: 'Ripeti il comando per ogni azione che vuoi aprire allo staff.'
-        }
-      ];
+      return [{
+        command: `/setup permessi comando:${command}`,
+        picks: [
+          { label: 'ruolo', value: asRole(values.permRole) },
+          { label: 'canale', value: asChannel(values.permChannel) }
+        ],
+        note: 'Ripeti il comando per ogni azione che vuoi aprire allo staff.'
+      }];
     }
   }
 };
@@ -396,6 +395,69 @@ function wireReveal() {
   targets.forEach(node => observer.observe(node));
 }
 
+/* Sidebar: lente di vetro che scivola sulla voce attiva + drawer su mobile. */
+function wireRail() {
+  const rail = document.querySelector('.rail');
+  const nav = document.getElementById('rail-nav');
+  const toggle = document.getElementById('rail-toggle');
+  if (!rail || !nav) return;
+
+  const lens = nav.querySelector('.rail__lens');
+  const items = [...nav.querySelectorAll('.rail__item')];
+
+  const setOpen = open => {
+    nav.classList.toggle('is-open', open);
+    toggle?.setAttribute('aria-expanded', String(open));
+  };
+
+  toggle?.addEventListener('click', () => setOpen(!nav.classList.contains('is-open')));
+  items.forEach(item => item.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') setOpen(false);
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!nav.classList.contains('is-open')) return;
+    if (rail.contains(event.target)) return;
+    setOpen(false);
+  });
+
+  const placeLens = item => {
+    if (!lens || !item) return;
+    nav.classList.add('is-active');
+    lens.style.setProperty('--lens-y', `${item.offsetTop}px`);
+    lens.style.height = `${item.offsetHeight}px`;
+  };
+
+  items.forEach(item => item.addEventListener('mouseenter', () => placeLens(item)));
+  items.forEach(item => item.addEventListener('focus', () => placeLens(item)));
+
+  const sections = items
+    .map(item => document.getElementById(item.dataset.section))
+    .filter(Boolean);
+
+  if ('IntersectionObserver' in window && sections.length) {
+    const ratios = new Map();
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) ratios.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
+      let bestId = null;
+      let bestRatio = 0;
+      for (const [id, ratio] of ratios) {
+        if (ratio > bestRatio) { bestRatio = ratio; bestId = id; }
+      }
+      const active = items.find(item => item.dataset.section === bestId) || null;
+      items.forEach(item => item.classList.toggle('is-active', item === active));
+      if (active) placeLens(active);
+      else nav.classList.remove('is-active');
+    }, { rootMargin: '-25% 0px -50% 0px', threshold: [0, 0.1, 0.3, 0.6, 1] });
+    sections.forEach(section => observer.observe(section));
+  }
+
+  window.addEventListener('resize', () => {
+    const active = items.find(item => item.classList.contains('is-active'));
+    if (active) placeLens(active);
+  });
+}
+
 /* Effetto liquido: riflesso che segue il puntatore + ripple gooey al tocco. */
 function wireLiquidButtons() {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -436,4 +498,5 @@ wireActions();
 renderFields();
 renderPlan();
 wireReveal();
+wireRail();
 wireLiquidButtons();
